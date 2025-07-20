@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+
+  <title>日本標準時（サーバー同期）</title>
+  <style>
+    body {
+      background-color: black;
+      color: limegreen;
+      font-family: "Courier New", monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .clock {
+      font-size: 4em;
+      text-align: center;
+    }
+
+    .label {
+      font-size: 0.4em;
+      color: #00ff00;
+      margin-top: 10px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="clock" id="clock">読み込み中...</div>
+
+  <script>
+    let baseTime = null;
+    let basePerf = null;
+
+    async function syncTime() {
+      try {
+        const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Tokyo');
+        const data = await res.json();
+        baseTime = new Date(data.datetime);
+        basePerf = performance.now();
+      } catch (err) {
+        document.getElementById('clock').innerHTML = '時刻取得失敗';
+        console.error(err);
+      }
+    }
+
+    function updateClock() {
+      if (!baseTime || !basePerf) return;
+
+      const nowPerf = performance.now();
+      const diff = nowPerf - basePerf;
+      const current = new Date(baseTime.getTime() + diff);
+      const h = String(current.getHours()).padStart(2, '0');
+      const m = String(current.getMinutes()).padStart(2, '0');
+      const s = String(current.getSeconds()).padStart(2, '0');
+      const ms = String(current.getMilliseconds()).padStart(3, '0').slice(0, 1); // 0.1秒精度
+
+      document.getElementById('clock').innerHTML = 
+        `${h}:${m}:${s}.${ms}<span class="label">日本標準時（JST・同期済）</span>`;
+    }
+
+    // 初回同期＆定期的再同期
+    syncTime();
+    setInterval(syncTime, 60 * 1000); // 1分ごと再同期
+
+    // 表示更新
+    setInterval(updateClock, 100);
+  </script>
+</body>
+</html>
